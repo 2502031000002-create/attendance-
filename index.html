@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Sheet</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 30px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            flex: 1;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .add-btn {
+            background: #007bff;
+        }
+
+        .present-btn {
+            background: #28a745;
+        }
+
+        .absent-btn {
+            background: #dc3545;
+        }
+
+        .delete-btn {
+            background: #6c757d;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background: #343a40;
+            color: white;
+        }
+
+        .present {
+            color: green;
+            font-weight: bold;
+        }
+
+        .absent {
+            color: red;
+            font-weight: bold;
+        }
+
+        .summary {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f1f1f1;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 700px) {
+            .form {
+                flex-direction: column;
+            }
+
+            table {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Student Attendance Sheet</h1>
+
+    <div class="form">
+        <input type="text" id="studentName" placeholder="Enter student name">
+        <input type="text" id="rollNumber" placeholder="Enter roll number">
+        <button class="add-btn" onclick="addStudent()">Add Student</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Roll No.</th>
+                <th>Student Name</th>
+                <th>Present</th>
+                <th>Absent</th>
+                <th>Total Classes</th>
+                <th>Attendance %</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <tbody id="attendanceTable">
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <strong>Total Students:</strong>
+        <span id="totalStudents">0</span>
+        <br><br>
+
+        <strong>Today's Present:</strong>
+        <span id="todayPresent">0</span>
+    </div>
+</div>
+<script>
+
+    let students = JSON.parse(localStorage.getItem("students")) || [];
+
+    function addStudent() {
+
+        let name = document.getElementById("studentName").value.trim();
+        let roll = document.getElementById("rollNumber").value.trim();
+
+        if (name === "" || roll === "") {
+            alert("Please enter student name and roll number.");
+            return;
+        }
+
+        let student = {
+            name: name,
+            roll: roll,
+            present: 0,
+            absent: 0
+        };
+
+        students.push(student);
+
+        saveData();
+        displayStudents();
+
+        document.getElementById("studentName").value = "";
+        document.getElementById("rollNumber").value = "";
+    }
+
+
+    function markPresent(index) {
+
+        students[index].present++;
+
+        saveData();
+        displayStudents();
+    }
+
+
+    function markAbsent(index) {
+
+        students[index].absent++;
+
+        saveData();
+        displayStudents();
+    }
+
+
+    function deleteStudent(index) {
+
+        if (confirm("Are you sure you want to delete this student?")) {
+
+            students.splice(index, 1);
+
+            saveData();
+            displayStudents();
+        }
+    }
+
+
+    function displayStudents() {
+
+        let table = document.getElementById("attendanceTable");
+
+        table.innerHTML = "";
+
+        let todayPresent = 0;
+
+        students.forEach((student, index) => {
+
+            let total = student.present + student.absent;
+
+            let percentage = total === 0
+                ? 0
+                : ((student.present / total) * 100).toFixed(2);
+
+            let row = `
+                <tr>
+
+                    <td>${student.roll}</td>
+
+                    <td>${student.name}</td>
+
+                    <td class="present">
+                        ${student.present}
+                    </td>
+
+                    <td class="absent">
+                        ${student.absent}
+                    </td>
+
+                    <td>
+                        ${total}
+                    </td>
+
+                    <td>
+                        ${percentage}%
+                    </td>
+
+                    <td>
+
+                        <button
+                            class="present-btn"
+                            onclick="markPresent(${index})">
+                            Present
+                        </button>
+
+                        <button
+                            class="absent-btn"
+                            onclick="markAbsent(${index})">
+                            Absent
+                        </button>
+
+                        <button
+                            class="delete-btn"
+                            onclick="deleteStudent(${index})">
+                            Delete
+                        </button>
+
+                    </td>
+
+                </tr>
+            `;
+
+            table.innerHTML += row;
+
+            todayPresent += student.present > 0 ? 1 : 0;
+        });
+
+        document.getElementById("totalStudents").innerText =
+            students.length;
+
+        document.getElementById("todayPresent").innerText =
+            todayPresent;
+    }
+
+
+    function saveData() {
+
+        localStorage.setItem(
+            "students",
+            JSON.stringify(students)
+        );
+    }
+
+
+    displayStudents();
+
+</script>
+
+</body>
+</html>
